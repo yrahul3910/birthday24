@@ -3,13 +3,13 @@
 #include <string.h>
 #include <assert.h>
 
-#define N(a)       "%"#a"$hhn"
-#define O(a,b)     "%45$"#a"d"N(b)
-#define o(a)       "%100$"#a"d"
-#define B(a,b,w)   o(*(a))o(*(b))o(w)N(a) 
+#define N(a)       "%"#a"$hhn"  // To arg a, write the number of bytes written so far mod 256
+#define O(a,b)     "%45$"#a"d"N(b)  // Print arg 45 with width a, then write the number of bytes written so far mod 256 to arg b
+#define o(a)       "%100$"#a"d"  // Print arg 100 with width a
+#define B(a,b,w)   o(*(a))o(*(b))o(w)N(a)  // My attempt at a hard-coded memcmp. Write a and b bytes, then write a pre-specified width to get the number of bytes written so far to 0 (mod 256).
 #define SS         "\n\033[2J\n%26$s";  // Clear the screen, then print argument 26 as a string
 
-char* fmt = O(37,2) // Write 37 (%) to arg 1 (which is d)
+char* fmt = O(37,2) // Write 37 (%) to arg 2 (which is d)
     O(78,3)  // Write 115 (s) to arg 2 (d+1), since we already wrote 37 bytes
     O(141, 4)  // Write 0 (256 % 256) to arg 3 (d+2)
     O(77,6)O(28,7)O(251,8)O(10,9)O(251,10)O(254,11)O(257,12)O(12,13)O(255,14) // Write "Midnights" to d[32-41]
@@ -38,6 +38,8 @@ char* fmt = O(37,2) // Write 37 (%) to arg 1 (which is d)
     d+58,d+59,d+60,d+61,d+62,\
     d+63,d+64,d+65,d+66,d+67
 
+// volatile: don't optimize away
+// aligned(64): align to 64 bytes
 volatile char d[69] __attribute__((aligned(64))) = {37,115, 0};
 
 int main() {
@@ -46,7 +48,5 @@ int main() {
     for (int i = 0; i < 69; i++) {
         printf("d[%2d] = %c,%d\n", i, d[i], d[i]);
     }
-
-    printf("%s\n", memcmp(d+31, d+58, 3) ? d+10 : (memset(d+10, 0, 21), d+10));
 }
 
